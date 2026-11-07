@@ -21,7 +21,8 @@ Este projeto foi montado **sem poder abrir o Effect House** (ele so roda em Wind
 | Pasta/arquivo | Para que serve |
 |---|---|
 | `assets/images/` | Imagens prontas: 3 doces, bomba, anel da boca, coracao, estrela |
-| `assets/audio/` | Sons prontos: `bgm_loop.wav` (musica de 16 s que repete), `sfx_catch_1..5.wav` (pegar doce, cada um mais agudo), `sfx_bomb.wav`, `sfx_gameover.wav`, `sfx_start.wav` |
+| `assets/audio/` | Sons prontos em **MP3** (estereo, 44,1 kHz, 192 kbps): `bgm_loop.mp3` (musica de 16 s que repete), `sfx_catch_1..5.mp3` (pegar doce, cada um mais agudo), `sfx_bomb.mp3`, `sfx_gameover.mp3`, `sfx_start.mp3` |
+| `assets/audio/wav_stereo/` | Os mesmos sons em WAV estereo de 16 bits, para usar se o MP3 nao carregar |
 | `scripts/GameController.js` | O script que voce coloca no Effect House |
 | `src/gameLogic.js` | A mesma logica, separada para testar |
 | `tests/` | Testes automaticos |
@@ -63,11 +64,15 @@ Na **Hierarchy**, clique em **+** (Add) e crie os itens abaixo. **Os nomes preci
 | `MouthRing` | Image/Sprite (2D) | Use `mouth_ring.png`. Fica na altura da boca |
 | `Item1` ... `Item8` | Objeto vazio (Empty) | Oito copias (Ctrl+D duplica) |
 | dentro de cada `ItemN` | 4 Images, nesta ordem: | 1) `candy_pink.png`, 2) `candy_blue.png`, 3) `candy_yellow.png`, 4) `bomb.png` |
-| `BgmLoop` | Audio | Arquivo `bgm_loop.wav`, marque **Loop** |
-| `SfxStart` | Audio | `sfx_start.wav` |
-| `SfxCatch1` ... `SfxCatch5` | Audio | `sfx_catch_1.wav` ... `sfx_catch_5.wav` |
-| `SfxBomb` | Audio | `sfx_bomb.wav` |
-| `SfxGameOver` | Audio | `sfx_gameover.wav` |
+| `BgmLoop` | Audio | Arquivo `bgm_loop.mp3`, marque **Loop** |
+| `SfxStart` | Audio | `sfx_start.mp3` |
+| `SfxCatch1` ... `SfxCatch5` | Audio | `sfx_catch_1.mp3` ... `sfx_catch_5.mp3` |
+| `SfxBomb` | Audio | `sfx_bomb.mp3` |
+| `SfxGameOver` | Audio | `sfx_gameover.mp3` |
+
+Importe primeiro os arquivos **.mp3** de `assets/audio/`. Se o Effect House recusar algum, importe os de `assets/audio/wav_stereo/` (mesmos nomes, formato WAV estereo).
+
+Observacao sobre o loop: o MP3 pode ter um silencio minusculo (cerca de 25 ms) no inicio por causa do codificador, entao a emenda da musica pode ter um pequeno "respiro". Se incomodar, use `wav_stereo/bgm_loop.wav`, que repete sem falha.
 
 Dica: desmarque **Play on Start** (tocar ao iniciar) nos objetos de audio, pois o script toca na hora certa.
 
@@ -108,6 +113,7 @@ Os objetos de som e imagem ficam na lista, nao precisa arruma-los na tela, excet
 - **A boca nao e detectada:** ajuste o numero `mouthOpenThreshold` no `CONFIG` ou use o **Visual Scripting** do Effect House: crie um gatilho "Mouth Open" (boca aberta) que chama a funcao `setMouthOpenFromTrigger(true)` do script, e "Mouth Close" chamando com `false`.
 - **Toque nao inicia o jogo:** use o Visual Scripting com "Screen Touch" chamando `tap()`.
 - **Escala errada (doces fora da tela):** mude `worldHalfWidth`, `worldTop`, `worldBottom` no `CONFIG`.
+- **O audio nao carrega no Effect House:** use os arquivos **MP3** (`assets/audio/*.mp3`), de tamanho pequeno, com nomes sem acento e sem espaco. Se ainda falhar, tente os de `assets/audio/wav_stereo/`. Voce tambem pode converter qualquer som em uma ferramenta gratuita como o Audacity: **Arquivo > Exportar > Exportar como MP3**. Para gerar os arquivos de novo: `pip install numpy pillow lameenc` e `python tools/generate_assets.py`.
 - **Erro em comandos do tipo `getComponent("SDFText")` ou `AudioComponent`:** a API muda entre versoes. Consulte a documentacao oficial em [effecthouse.tiktok.com](https://effecthouse.tiktok.com) (area de Scripting) e troque o nome do comando. Se quiser, copie a mensagem de erro e peca ajuda.
 - **Opcao mais facil (sem script):** o Effect House tem modelos prontos de jogo com boca (Templates). Se o script der muito trabalho, comece por um modelo e troque as imagens e sons pelos desta pasta.
 

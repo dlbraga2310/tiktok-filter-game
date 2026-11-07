@@ -2,18 +2,22 @@
 """Gera imagens (PNG) e sons (WAV) originais para o jogo Chuva de Docinhos.
 
 Uso: python tools/generate_assets.py
-Requer: pip install numpy pillow
+Sons: gera MP3 estereo 44,1 kHz 192 kbps CBR em assets/audio/ (use estes primeiro)
+e WAV estereo 16 bits 44,1 kHz em assets/audio/wav_stereo/ (alternativa).
+Requer: pip install numpy pillow lameenc
 """
 import math
 import os
 import wave
 
+import lameenc
 import numpy as np
 from PIL import Image, ImageDraw
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IMG = os.path.join(ROOT, "assets", "images")
 SND = os.path.join(ROOT, "assets", "audio")
+SND_WAV = os.path.join(SND, "wav_stereo")
 SR = 44100
 
 
@@ -136,12 +140,22 @@ def save(name, data, peak=0.89):
     m = np.max(np.abs(data))
     if m > 0:
         data = data / m * peak
-    pcm = (data * 32767).astype("<i2")
-    with wave.open(os.path.join(SND, name), "wb") as w:
-        w.setnchannels(1)
+    mono = (data * 32767).astype("<i2")
+    pcm = np.repeat(mono[:, None], 2, axis=1)  # estereo (L = R)
+    base = os.path.splitext(name)[0]
+    with wave.open(os.path.join(SND_WAV, base + ".wav"), "wb") as w:
+        w.setnchannels(2)
         w.setsampwidth(2)
         w.setframerate(SR)
         w.writeframes(pcm.tobytes())
+    enc = lameenc.Encoder()
+    enc.set_bit_rate(192)
+    enc.set_in_sample_rate(SR)
+    enc.set_channels(2)
+    enc.set_quality(2)
+    with open(os.path.join(SND, base + ".mp3"), "wb") as f:
+        f.write(enc.encode(pcm.tobytes()))
+        f.write(enc.flush())
 
 
 def bgm():
@@ -223,6 +237,7 @@ def sfx():
 def main():
     os.makedirs(IMG, exist_ok=True)
     os.makedirs(SND, exist_ok=True)
+    os.makedirs(SND_WAV, exist_ok=True)
     candy("candy_pink.png", (255, 105, 180, 255), (255, 182, 220, 255))
     candy("candy_blue.png", (70, 170, 255, 255), (170, 215, 255, 255))
     candy("candy_yellow.png", (255, 210, 50, 255), (255, 240, 150, 255))
