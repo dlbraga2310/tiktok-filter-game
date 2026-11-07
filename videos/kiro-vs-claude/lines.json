@@ -1,0 +1,57 @@
+[
+ {
+  "id": "l01",
+  "text": "Kiro e Claude: o que muda de verdade? Só com o que está na documentação oficial.",
+  "voice": "pt-BR-FranciscaNeural",
+  "rate": "+8%"
+ },
+ {
+  "id": "l02",
+  "text": "Primeiro, um fato: o Kiro, da AWS, é uma IDE com agentes, e oferece modelos Claude, da Anthropic. Não é rival do modelo.",
+  "voice": "pt-BR-FranciscaNeural",
+  "rate": "+8%"
+ },
+ {
+  "id": "l03",
+  "text": "Já o Claude Code é o agente de programação da Anthropic, no terminal, nas IDEs, no app e na web.",
+  "voice": "pt-BR-FranciscaNeural",
+  "rate": "+8%"
+ },
+ {
+  "id": "l04",
+  "text": "Um: specs. No Kiro, você descreve a ideia, e ele monta requisitos, design e tarefas, com revisão em cada etapa. O Claude Code tem modo de plano, mas não encontrei esse fluxo pronto na documentação.",
+  "voice": "pt-BR-FranciscaNeural",
+  "rate": "+8%"
+ },
+ {
+  "id": "l05",
+  "text": "Dois: hooks. Os dois têm. No Kiro, a documentação mostra criar o hook só descrevendo o que você quer, em linguagem natural.",
+  "voice": "pt-BR-FranciscaNeural",
+  "rate": "+8%"
+ },
+ {
+  "id": "l06",
+  "text": "Três: contexto do projeto. O Kiro gera arquivos de steering, sobre produto, tecnologia e estrutura. O Claude Code tem o equivalente: o arquivo CLAUDE.md.",
+  "voice": "pt-BR-FranciscaNeural",
+  "rate": "+8%",
+  "say": "Três: contexto do projeto. O Kiro gera arquivos de steering, sobre produto, tecnologia e estrutura. O Claude Code tem o equivalente: o arquivo CLAUDE ponto M D."
+ },
+ {
+  "id": "l07",
+  "text": "Quatro: MCP. Empate. Os dois conectam ferramentas externas por MCP.",
+  "voice": "pt-BR-FranciscaNeural",
+  "rate": "+8%"
+ },
+ {
+  "id": "l08",
+  "text": "Cinco: modelos. O Kiro lista vários, incluindo Claude e de outras empresas, além de um modo Auto.",
+  "voice": "pt-BR-FranciscaNeural",
+  "rate": "+8%"
+ },
+ {
+  "id": "l09",
+  "text": "Resumo honesto: o Kiro não faz o que o Claude não consegue. Ele traz, integrado, um fluxo guiado por specs. Teste os dois e escolha o seu.",
+  "voice": "pt-BR-FranciscaNeural",
+  "rate": "+8%"
+ }
+]

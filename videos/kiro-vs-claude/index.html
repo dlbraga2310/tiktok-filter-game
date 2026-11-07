@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#F2F0EA;overflow:hidden}canvas{display:block}</style>
+</head><body><canvas id="c"></canvas>
+<script>
+// Kiro x Claude Code | estilo Swiss Motion Graphics (lemo-opuscar, lemomo-ai, CC BY 4.0)
+// Papel, tinta, cinza e UMA cor de sinal (laranja): a cor de sinal pertence ao Kiro.
+const W = innerWidth, H = innerHeight;
+const cv = document.getElementById('c'); cv.width = W; cv.height = H;
+const g = cv.getContext('2d');
+const PAPER = '#F2F0EA', INK = '#141414', SIG = '#FF5A00', GREY = '#8A8780', LIGHT = '#D9D6CE';
+const M = 72;                       // margem lateral
+const FONT = 'Inter';
+
+// ---------- easing (cubic-bezier(.7,0,.2,1)) ----------
+function bez(x1, y1, x2, y2) {
+  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+  const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+  const X = s => ((ax * s + bx) * s + cx) * s, Y = s => ((ay * s + by) * s + cy) * s;
+  const dX = s => (3 * ax * s + 2 * bx) * s + cx;
+  return x => {
+    if (x <= 0) return 0; if (x >= 1) return 1;
+    let s = x;
+    for (let i = 0; i < 8; i++) { const e = X(s) - x; if (Math.abs(e) < 1e-6) break; const d = dX(s); if (Math.abs(d) < 1e-6) break; s -= e / d; }
+    return Y(Math.min(1, Math.max(0, s)));
+  };
+}
+const ease = bez(.7, 0, .2, 1);
+const seg = (t, a, b) => Math.min(1, Math.max(0, (t - a) / (b - a)));
+
+// ---------- linha do tempo (gerada por plan.py) ----------
+let TL = null, LN = [], SC = [];
+window.DUR = 80; window.EV = []; window.READY = false;
+const EVQ = [];
+const ev = (t, type) => EVQ.push({ t: +t.toFixed(3), type });
+
+// instante dentro da fala i em que aparece o trecho `s`
+const at = (i, s) => { const l = LN[i]; const k = l.text.indexOf(s); return l.t0 + (l.t1 - l.t0) * Math.max(0, k) / l.text.length; };
+
+// ---------- texto com subida (clip-reveal) ----------
+let TXT = [];
+function wrap(str, font, maxW) {
+  g.font = font; const words = str.split(' '); const out = []; let cur = '';
+  for (const w of words) { const test = cur ? cur + ' ' + w : w; if (g.measureText(test).width > maxW && cur) { out.push(cur); cur = w; } else cur = test; }
+  if (cur) out.push(cur); return out;
+}
+function rise(id, str, x, y, size, weight, color, tIn, tOut, t, o = {}) {
+  const pin = ease(seg(t, tIn, tIn + .5)), pout = ease(seg(t, tOut, tOut + .4));
+  if (t < tIn || pout >= 1) return;
+  const font = `${weight} ${size}px ${FONT}`;
+  const lh = o.lh || size * 1.18, maxW = o.maxW || (W - 2 * M);
+  if (o.rightAlign) { g.font = font; if (o.ls) g.letterSpacing = o.ls; x -= g.measureText(str).width; g.letterSpacing = '0px'; }
+  const lines = o.nowrap ? [str] : wrap(str, font, maxW);
+  g.save(); g.font = font; g.fillStyle = color; g.textBaseline = 'alphabetic';
+  if (o.ls) g.letterSpacing = o.ls;
+  lines.forEach((ln, i) => {
+    const d = Math.min(1, i * .08 + 0);            // pequeno escalonamento por linha
+    const pi = ease(seg(t, tIn + i * .07, tIn + i * .07 + .5));
+    const off = (1 - pi) * size * 1.25 - pout * size * 1.25;
+    const by = y + i * lh;
+    g.save(); g.beginPath(); g.rect(x - 4, by - size * 1.0, (o.clipW || W) , size * 1.3); g.clip();
+    g.fillText(ln, x, by + off); g.restore();
+  });
+  g.restore();
+  g.font = font; if (o.ls) g.letterSpacing = o.ls;
+  const wd = Math.max(...lines.map(l => g.measureText(l).width)); g.letterSpacing = '0px';
+  if (!o.pass && pin >= 1 && pout <= 0) TXT.push({ id, text: str, x0: x, y0: y - size, x1: x + wd, y1: y + (lines.length - 1) * lh + size * .3 });
+}
+function rule(x, y, w, tIn, tOut, t, th = 2, color = INK, dur = .6) {   // linha que cresce (linear)
+  const p = seg(t, tIn, tIn + dur), q = seg(t, tOut, tOut + .3);
+  if (p <= 0 || q >= 1) return;
+  g.fillStyle = color; g.fillRect(x + w * q, y, w * p * (1 - q), th);
+}
+
+// ---------- marcas: dif (sinal), tem (tinta), parcial ----------
+function mark(kind, label, x, y, tIn, tOut, t) {
+  const S = 96, p = ease(seg(t, tIn, tIn + .45)), q = ease(seg(t, tOut, tOut + .35));
+  if (p <= 0 || q >= 1) return;
+  const h = S * p * (1 - q), top = y + S - h + (q * S * 0);   // cresce de baixo para cima
+  g.save(); g.beginPath(); g.rect(x - 2, y - 2, S + 4, S + 4); g.clip();
+  g.fillStyle = kind === 'dif' ? SIG : INK;
+  if (kind === 'parcial') {
+    g.fillRect(x, y + S - Math.min(h, S / 2), S, Math.min(h, S / 2));
+    g.strokeStyle = INK; g.lineWidth = 4; g.strokeRect(x + 2, y + 2, S - 4, S - 4);
+  } else g.fillRect(x, q > 0 ? y + S - h : y + S - h, S, h);
+  g.restore();
+  rise('mk-' + label + x + y, label, x + S, y + S + 34, 21, 700, kind === 'dif' ? SIG : INK, tIn + .1, tOut, t, { nowrap: true, ls: '2px', pass: false, clipW: 400, rightAlign: true });
+}
+
+// ---------- cabecalho e progresso ----------
+function header(t, sceneIdx) {
+  g.fillStyle = INK; g.font = `700 24px ${FONT}`; g.textBaseline = 'alphabetic'; g.letterSpacing = '3px';
+  g.fillText('KIRO × CLAUDE CODE', M, 96);
+  g.fillStyle = GREY; g.textAlign = 'right'; g.fillText('DOCS OFICIAIS', W - M, 96); g.textAlign = 'left'; g.letterSpacing = '0px';
+  g.fillStyle = INK; g.fillRect(M, 116, W - 2 * M, 2);
+  const n = 5, gap = 12, cw = (W - 2 * M - gap * (n - 1)) / n;
+  for (let i = 0; i < n; i++) {
+    const x = M + i * (cw + gap); g.fillStyle = LIGHT; g.fillRect(x, 134, cw, 10);
+    const f = ease(seg(t, T_TOPIC[i], T_TOPIC[i] + .5));
+    g.fillStyle = INK; g.fillRect(x, 134, cw * f, 10);
+  }
+}
+let T_TOPIC = [1e9, 1e9, 1e9, 1e9, 1e9];
+
+// ---------- painel de comparacao ----------
+function panel(y, who, text, kind, mlabel, tIn, tOut, t, id) {
+  const sig = who === 'KIRO';
+  rule(M, y, W - 2 * M, tIn, tOut, t, 3, INK, .7);
+  rise(id + 'l', who, M, y + 52, 24, 800, sig ? SIG : GREY, tIn + .15, tOut, t, { nowrap: true, ls: '4px' });
+  rise(id + 't', text, M, y + 124, 50, 700, INK, tIn + .3, tOut, t, { maxW: 640, lh: 60, ls: '-1px' });
+  mark(kind, mlabel, W - M - 96, y + 40, tIn + .6, tOut, t);
+}
+
+// ---------- legendas (chunks por fala) ----------
+const CAPS = [];
+function buildCaps() {
+  for (const l of LN) {
+    const words = l.text.split(' '); const chunks = []; let cur = '';
+    for (const w of words) {
+      const next = cur ? cur + ' ' + w : w;
+      if (next.length > 58 && cur) { chunks.push(cur); cur = w; } else cur = next;
+      if (/[.:?!]$/.test(w) && cur.length > 26) { chunks.push(cur); cur = ''; }
+    }
+    if (cur) chunks.push(cur);
+    for (let i = chunks.length - 1; i > 0; i--) if (chunks[i].length < 24) { chunks[i - 1] += ' ' + chunks[i]; chunks.splice(i, 1); }
+    const tot = chunks.reduce((a, c) => a + c.length, 0); let acc = 0;
+    chunks.forEach((c, i) => {
+      const a = l.t0 + (l.t1 - l.t0) * acc / tot; acc += c.length;
+      const b = i === chunks.length - 1 ? l.t1 + .5 : l.t0 + (l.t1 - l.t0) * acc / tot;
+      CAPS.push({ text: c, t0: a, t1: b, line: l.id });
+    });
+  }
+}
+function captions(t) {
+  for (const c of CAPS) {
+    if (t < c.t0 || t > c.t1 + .45) continue;
+    const y = 1450;
+    rule(M, y - 78, 96, c.t0, c.t1, t, 8, SIG, .35);
+    rise('cap', c.text, M, y, 46, 600, INK, c.t0, c.t1, t, { maxW: W - 2 * M - 40, lh: 58, pass: true, ls: '-0.5px' });
+  }
+}
+
+// ---------- cenas ----------
+function numeral(n, title, t0, t1, t) {
+  g.save(); g.font = `900 380px ${FONT}`; g.letterSpacing = '-8px';
+  const lb = g.measureText(n).actualBoundingBoxLeft || 0;     // alinhamento optico
+  g.restore();
+  rise('num-' + n, n, M - 8, 560, 380, 900, INK, t0, t1, t, { nowrap: true, ls: '-8px', pass: true });
+  rise('tt-' + n, title, M, 700, 120, 800, INK, t0 + .15, t1, t, { nowrap: true, ls: '-3px' });
+}
+
+function build() {
+  const s = [];
+  const L = i => LN[i];
+  // 0: abertura
+  s.push({ id: 'abertura', t0: 0, t1: L(1).t0 - .1, draw(t, a, b) {
+    rise('k', 'kiro', M - 10, 640, 430, 900, SIG, .2, b - .4, t, { nowrap: true, ls: '-14px' });
+    rise('x', '×', M, 800, 150, 300, INK, .5, b - .4, t, { nowrap: true });
+    rise('c', 'claude', M - 6, 1060, 300, 900, INK, .7, b - .4, t, { nowrap: true, ls: '-10px' });
+    rise('sub', 'o que o Kiro faz que o Claude não faz?', M, 1200, 44, 500, GREY, 1.3, b - .4, t, { maxW: 900 });
+    rule(M, 1270, W - 2 * M, 1.5, b - .4, t, 2, INK, 1);
+    rise('nota', '1080×1920 · 24 fps · 80 s · só fatos de documentação oficial', M, 1318, 22, 600, GREY, 2, b - .4, t, { nowrap: true, pass: true });
+  }, init() { ev(.2, 'snap'); ev(.7, 'snap'); ev(1.3, 'tick'); } });
+  // 1: quem e quem
+  { const a = L(1).t0 - .35, b = L(3).t0 - .1, k1 = at(1, 'Primeiro') + .2, k2 = L(2).t0 + .2;
+    s.push({ id: 'contexto', t0: a, t1: b, draw(t) {
+      numeral('00', 'quem é quem', a, b - .15, t);
+      panel(760, 'KIRO', 'IDE com agentes, da AWS. Oferece modelos Claude e de outras empresas.', 'tem', 'IDE · CLI', k1, b - .15, t, 'c1');
+      panel(1070, 'CLAUDE CODE', 'Agente da Anthropic. Terminal, IDE, app e web.', 'tem', 'APP · WEB', k2, b - .15, t, 'c2');
+    }, init() { ev(a, 'snap'); ev(k1, 'snap'); ev(k1 + .6, 'thunk'); ev(k2, 'snap'); ev(k2 + .6, 'thunk'); } }); }
+  // 2..6: os cinco temas
+  const topics = [
+    { n: '01', title: 'specs', li: 3, kS: 'No Kiro', cS: 'O Claude Code',
+      k: ['requisitos, design e tarefas, com revisão em cada etapa.', 'dif', 'DIFERENCIAL'],
+      c: ['modo de plano; fluxo de specs pronto: não achei.', 'parcial', 'PARCIAL'] },
+    { n: '02', title: 'hooks', li: 4, kS: 'No Kiro', cS: 'Os dois têm',
+      k: ['hook criado só descrevendo em linguagem natural.', 'tem', 'TEM'],
+      c: ['também tem hooks (/hooks).', 'tem', 'TEM'] },
+    { n: '03', title: 'contexto', li: 5, kS: 'O Kiro gera', cS: 'O Claude Code tem',
+      k: ['steering: product, tech e structure em .kiro/steering.', 'tem', 'TEM'],
+      c: ['CLAUDE.md e .claude/rules.', 'tem', 'TEM'] },
+    { n: '04', title: 'mcp', li: 6, kS: 'Empate', cS: 'Os dois conectam',
+      k: ['MCP, com diretório de servidores.', 'tem', 'TEM'],
+      c: ['MCP também.', 'tem', 'TEM'] },
+    { n: '05', title: 'modelos', li: 7, kS: 'O Kiro lista', cS: '',
+      k: ['vários modelos, Claude e outros, mais Auto.', 'dif', 'DIFERENCIAL'],
+      c: ['modelos Claude, por aliases.', 'tem', 'TEM'] }
+  ];
+  topics.forEach((p, idx) => {
+    const a = L(p.li).t0 - .35, b = idx === 4 ? L(8).t0 - .1 : L(p.li + 1).t0 - .1;
+    const kT = idx === 4 ? a + .7 : at(p.li, p.kS) + .1, cT = p.cS ? at(p.li, p.cS) + .1 : kT + 1.6;
+    T_TOPIC[idx] = a + .4;
+    s.push({ id: p.title, t0: a, t1: b, draw(t) {
+      numeral(p.n, p.title, a, b - .15, t);
+      panel(760, 'KIRO', p.k[0], p.k[1], p.k[2], kT, b - .15, t, 'k' + idx);
+      panel(1070, 'CLAUDE CODE', p.c[0], p.c[1], p.c[2], Math.max(cT, kT + 1.6), b - .15, t, 'p' + idx);
+    }, init() { ev(a, 'snap'); ev(kT, 'snap'); ev(kT + .6, 'thunk'); const c2 = Math.max(cT, kT + 1.6); ev(c2, 'snap'); ev(c2 + .6, 'thunk'); } });
+  });
+  // 7: resumo
+  { const a = L(8).t0 - .35, b = L(8).t1 + .5;
+    const rows = [['specs', 'dif', 'parcial'], ['hooks', 'tem', 'tem'], ['contexto', 'tem', 'tem'], ['mcp', 'tem', 'tem'], ['modelos', 'dif', 'tem']];
+    s.push({ id: 'resumo', t0: a, t1: b, draw(t) {
+      rise('rs', 'resumo', M, 300, 150, 900, INK, a, b - .15, t, { nowrap: true, ls: '-5px' });
+      g.fillStyle = GREY; 
+      rise('hk', 'KIRO', W - M - 300, 400, 22, 800, SIG, a + .3, b - .15, t, { nowrap: true, ls: '3px' });
+      rise('hc', 'CLAUDE', W - M - 130, 400, 22, 800, GREY, a + .3, b - .15, t, { nowrap: true, ls: '3px' });
+      rows.forEach((r, i) => {
+        const y = 440 + i * 150, ti = a + .5 + i * .35;
+        rule(M, y, W - 2 * M, ti, b - .15, t, 2, INK, .5);
+        rise('r' + i, r[0], M, y + 100, 72, 800, INK, ti + .1, b - .15, t, { nowrap: true, ls: '-2px' });
+        [[r[1], W - M - 300], [r[2], W - M - 130]].forEach(([k, x]) => {
+          const p = ease(seg(t, ti + .3, ti + .75)), q = ease(seg(t, b - .15, b - .0));
+          if (p <= 0 || q >= 1) return;
+          const S = 84, y0 = y + 28, h = S * p * (1 - q);
+          g.save(); g.beginPath(); g.rect(x - 2, y0 - 2, S + 4, S + 4); g.clip();
+          g.fillStyle = k === 'dif' ? SIG : INK;
+          if (k === 'parcial') { g.fillRect(x, y0 + S - Math.min(h, S / 2), S, Math.min(h, S / 2)); g.strokeStyle = INK; g.lineWidth = 4; g.strokeRect(x + 2, y0 + 2, S - 4, S - 4); }
+          else g.fillRect(x, y0 + S - h, S, h);
+          g.restore();
+        });
+      });
+      rise('leg', 'laranja: diferencial do Kiro · preto: tem · meio: parcial', M, 1230, 22, 600, GREY, a + 2.4, b - .15, t, { maxW: 900, lh: 30 });
+    }, init() { ev(a, 'snap'); rows.forEach((r, i) => { ev(a + .8 + i * .35, 'thunk'); }); } });
+  }
+  // 8: cartela final
+  { const a = L(8).t1 + .5, b = TL.dur + 1;
+    s.push({ id: 'fim', t0: a, t1: b, draw(t) {
+      rise('f1', 'kiro', M - 10, 520, 330, 900, SIG, a, b, t, { nowrap: true, ls: '-11px' });
+      rule(M, 600, W - 2 * M, a + .3, b, t, 3, INK, .8);
+      rise('f2', 'Fontes: documentação oficial', M, 700, 40, 800, INK, a + .5, b, t, { nowrap: true });
+      rise('f3', 'kiro.dev/docs', M, 770, 44, 500, INK, a + .7, b, t, { nowrap: true });
+      rise('f4', 'code.claude.com/docs', M, 830, 44, 500, INK, a + .85, b, t, { nowrap: true });
+      rise('f5', 'Feito com lemo-opuscar (lemomo-ai, CC BY 4.0), estilo Swiss Motion Graphics. Fonte Inter (OFL). Veja o README para o que foi verificado.', M, 960, 28, 500, GREY, a + 1.3, b, t, { maxW: 900, lh: 38, pass: true });
+    }, init() { ev(a, 'snap'); ev(a + .3, 'thunk'); } });
+  }
+  return s;
+}
+
+window.render = (t) => {
+  TXT = [];
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = PAPER; g.fillRect(0, 0, W, H);
+  header(t, 0);
+  for (const s of SC) if (t >= s.t0 && t <= s.t1 + .5) s.draw(t, s.t0, s.t1);
+  captions(t);
+  window._txt = TXT;
+};
+window.TEXTS = (t) => { window.render(t); return TXT; };
+
+(async () => {
+  TL = await (await fetch('timeline.json')).json(); LN = TL.lines; window.DUR = TL.dur;
+  await Promise.all([new FontFace(FONT, 'url(fonts/Inter.ttf)', { weight: '100 900' }).load().then(f => document.fonts.add(f))]);
+  SC = build(); buildCaps(); SC.forEach(s => s.init && s.init());
+  EVQ.sort((a, b) => a.t - b.t); window.EV = EVQ;
+  window.render(0);
+  window.READY = true;
+})();
+</script></body></html>
