@@ -1,0 +1,9 @@
+{
+  "name": "chuva-de-docinhos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Filtro de TikTok (Effect House): abra a boca para pegar docinhos",
+  "scripts": {
+    "test": "node --test"
+  }
+}
