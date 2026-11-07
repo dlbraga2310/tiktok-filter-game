@@ -1,0 +1,59 @@
+{
+ "dur": 80.064,
+ "lines": [
+  {
+   "id": "l01",
+   "t0": 1.0,
+   "t1": 5.642,
+   "text": "Kiro e Claude: o que muda de verdade? Só com o que está na documentação oficial."
+  },
+  {
+   "id": "l02",
+   "t0": 6.542,
+   "t1": 14.23,
+   "text": "Primeiro, um fato: o Kiro, da AWS, é uma IDE com agentes, e oferece modelos Claude, da Anthropic. Não é rival do modelo."
+  },
+  {
+   "id": "l03",
+   "t0": 15.13,
+   "t1": 20.649,
+   "text": "Já o Claude Code é o agente de programação da Anthropic, no terminal, nas IDEs, no app e na web."
+  },
+  {
+   "id": "l04",
+   "t0": 21.549,
+   "t1": 33.276,
+   "text": "Um: specs. No Kiro, você descreve a ideia, e ele monta requisitos, design e tarefas, com revisão em cada etapa. O Claude Code tem modo de plano, mas não encontrei esse fluxo pronto na documentação."
+  },
+  {
+   "id": "l05",
+   "t0": 34.176,
+   "t1": 41.551,
+   "text": "Dois: hooks. Os dois têm. No Kiro, a documentação mostra criar o hook só descrevendo o que você quer, em linguagem natural."
+  },
+  {
+   "id": "l06",
+   "t0": 42.451,
+   "t1": 52.415,
+   "text": "Três: contexto do projeto. O Kiro gera arquivos de steering, sobre produto, tecnologia e estrutura. O Claude Code tem o equivalente: o arquivo CLAUDE.md."
+  },
+  {
+   "id": "l07",
+   "t0": 53.315,
+   "t1": 58.546,
+   "text": "Quatro: MCP. Empate. Os dois conectam ferramentas externas por MCP."
+  },
+  {
+   "id": "l08",
+   "t0": 59.446,
+   "t1": 65.318,
+   "text": "Cinco: modelos. O Kiro lista vários, incluindo Claude e de outras empresas, além de um modo Auto."
+  },
+  {
+   "id": "l09",
+   "t0": 66.218,
+   "t1": 74.064,
+   "text": "Resumo honesto: o Kiro não faz o que o Claude não consegue. Ele traz, integrado, um fluxo guiado por specs. Teste os dois e escolha o seu."
+  }
+ ]
+}
